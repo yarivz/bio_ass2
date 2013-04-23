@@ -66,6 +66,8 @@ public class FastaYariv {
                 }
             }
             //Close the input stream
+            fstream.close();
+            br.close();
             in.close();
         }catch (Exception e){//Catch exception if any
             System.err.println("Error: " + e.getMessage());
@@ -102,8 +104,50 @@ public class FastaYariv {
 
     public HashMap<Integer,ArrayList<Diagonal>> buildDiagonals(){
         HashMap<Integer,ArrayList<Diagonal>> diags = new HashMap<Integer,ArrayList<Diagonal>>();
-        for(int i=0;i<hotspots.size();i++){
-            tempDiags = hotspots.get(i);
+        ArrayList<Diagonal> diagList;
+        HashMap<Integer,ArrayList<Diagonal>> diagMap;
+        for(int i=0;i<hotspots.size();i++){    //i is the current db String number
+            tempDiags = hotspots.get(i);       //tempdiags is the list of hotspots found for the current db str and query
+            diagMap = new  HashMap<Integer,ArrayList<Diagonal>>();  //diagMap holds the current Diagonals for this query and db str
+            for(Diagonal d:tempDiags){        //sort Diagonals according to their i-j ratios - group same diagonal runs together
+                int key = d.i-d.j;
+                if(diagMap.containsKey(key))    //if there are other hotspots in the same diagonal, try to connect neighbouring hotspots
+                {
+                    diagList =  diagMap.get(key);
+                    for(Diagonal g:diagList)                    //iterate over the current Diagonals already found
+                    {
+                        Diagonal upper = (d.j < g.j ? d : g);    //get the diagonal which is the upper-left of the two
+                        Diagonal lower = (upper == d ? g : d);   //get the diagonal which is the lower-right of the two
+                        int distance = lower.j-upper.j;      //get the distance between their indexes
+                        if(distance<=upper.length)    //Diagonals are overlapping
+                        {
+                            diagList.remove(lower);
+                            diagList.remove(upper);
+                            upper.length = distance+lower.length;          //combine the diagonals
+                            upper.score = upper.length;
+                            diagList.add(upper);
+                            break;
+                        }
+                        else if(distance > upper.length && distance - upper.length < lower.length){   //distance between Diagonals is smaller than the length of the lower
+                            diagList.remove(lower);
+                            diagList.remove(upper);
+                            upper.score = upper.length - (distance-upper.length)+lower.length;
+                            upper.length = distance+lower.length;
+                            //TODO may need to add field to Diagonal about how many mismatches were included
+                            diagList.add(upper);
+                            break;
+                        }
+                    }
+                   // diagList.add(d);
+                }
+                else
+                {
+                    diagList = new ArrayList<Diagonal>();
+                    diagList.add(d);
+                    diagMap.put(key,diagList);
+                }
+            }
+
 
 
         }

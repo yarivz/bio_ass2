@@ -6,9 +6,9 @@ public class LocalAlignment extends Alignment{
 		super(scoreMatrixFile,s1,s2,option1,option2);
 	}
 	
-	public void local() throws RuntimeException
+	public int local() throws RuntimeException
 	{
-		int max=0;
+		int max = 0;
 		for(int i=1;i<s1.length()+1;i++)	
 			for(int j=1;j<s2.length()+1;j++)
 			{
@@ -22,8 +22,7 @@ public class LocalAlignment extends Alignment{
 					traceBack[i][j] = LEFT;	
 				max = Math.max(max, intOutMatrix[i][j]);
 			}
-		tracePath(max);		// restoring the path of our local alignment
-		
+		return max;
 	}
 	
 	public void localGap()
@@ -93,8 +92,10 @@ public class LocalAlignment extends Alignment{
 		gapTracePath(max);			// restoring the path of our local alignment
 	}
 	
-	public void tracePath(int max)
+	public AlignOut tracePath(int max)
 	{
+		int endI = 0;
+		int endJ = 0;
 		// find calculated max value
 		if(max!=0)
 		{
@@ -103,8 +104,8 @@ public class LocalAlignment extends Alignment{
 				for(int j=s2.length();j>0;j--)
 					if(intOutMatrix[i][j] == max)
 					{
-						print(i,j);
-						System.out.println("Score: "+max);
+						endI = i;
+						endJ = j;
 						break outerloop;
 					}
 		}
@@ -114,6 +115,8 @@ public class LocalAlignment extends Alignment{
 			System.out.println("Empty string");
 			System.out.println("Score: 0");
 		}
+		
+		return new AlignOut(0,max,endI,endJ,traceBack);
 	}
 	
 	public void gapTracePath(double max)
@@ -128,7 +131,7 @@ public class LocalAlignment extends Alignment{
 					{
 						if(doubleOutMatrix[i][j] == max)
 						{
-							print(i,j);
+							print(i,j,max);
 							System.out.println("Score: "+max);
 							break outerloop;
 						}
@@ -137,7 +140,7 @@ public class LocalAlignment extends Alignment{
 					{
 						if(intOutMatrix[i][j] == max)
 						{
-							print(i,j);
+							print(i,j,max);
 							System.out.println("Score: "+max);
 							break outerloop;
 						}

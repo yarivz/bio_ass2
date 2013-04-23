@@ -13,10 +13,10 @@ public class FastaAlon{
 	int diagonalNum;
 	int indel;
 	
-	public FastaAlon(String dbStr,String query, int hsThreshold, int chainingThreshold, int diagonalNum, int indel)
+	public FastaAlon(String query, String dbStr, int hsThreshold, int chainingThreshold, int diagonalNum, int indel)
 	{
-		this.dbStr = dbStr;
 		this.query = query;
+		this.dbStr = dbStr;
 		diagVec = new Vector<Diagonal>(diagonalNum+2);		// including source and target diagonal vertices
 		diagVec.add(0, new Diagonal(0, -1,0, 0));			// source
 		diagVec.add(diagonalNum+1, new Diagonal(0,Integer.MAX_VALUE ,0, 0));	//traget
@@ -41,7 +41,7 @@ public class FastaAlon{
 				Diagonal v2 = diagVec.elementAt(j);
 				if(v1.i+v1.length-1 <= v2.i && v1.j+v1.length-1 <= v2.j)
 					v1.adj.add(new edge(v1,v2,((v2.i - v1.i)+(v2.j - v1.j))*indel));
-			}	//**** should we add a limit to the chaining so it won't get too low???****///
+			}
 		}
 	    
 	    // dag algo
@@ -52,7 +52,7 @@ public class FastaAlon{
 			while(iter.hasNext())
 			{
 				edge e = iter.next();
-				int c = e.vs.pathValue + e.weight;
+				int c = e.vs.pathValue + e.vs.score + e.weight;
 				if (c > e.vt.pathValue)
 				{
 					e.vt.pathValue = c;

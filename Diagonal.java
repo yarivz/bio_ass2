@@ -2,8 +2,8 @@ import java.util.ArrayList;
 
 public class Diagonal implements Comparable<Diagonal>{
 	
-	int i;  //the index of the diagonal in the query
-	int j;  //the index of the diagonal in the DB String
+	int i;
+	int j;
 	int length;
 	int score;
 	ArrayList<edge> adj;

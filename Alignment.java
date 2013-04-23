@@ -18,6 +18,7 @@ public class Alignment{
 	byte [][] traceBack;
 	int a,b,eGapSize,fGapSize;
     double[] eValue,fValue,gValue,gaps; //Variables for global alignment with gaps
+    
 
     public Alignment(String scoreMatrixFile,String s1,String s2,String option1, String option2)
 	{
@@ -170,7 +171,7 @@ public class Alignment{
         return (Math.log(k)+10);
     }
 	
-	public void print(int i,int j)			// printing the two aligned sequences
+	public void print(int i,int j,double max)			// printing the two aligned sequences
 	{
 		String outString1 = "";
 		String outString2 = "";
@@ -232,5 +233,6 @@ public class Alignment{
         System.out.println();
 		System.out.println(outString1);
 		System.out.println(outString2);
+		System.out.println("Score: "+max);
 	}
 }
