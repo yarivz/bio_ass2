@@ -1,27 +1,50 @@
 
 public class LocalAlignment extends Alignment{
 	
-	public LocalAlignment(String scoreMatrixFile,String s1,String s2,String option1,String option2)
+	public LocalAlignment(int[][] scoreMatrix,String s1,String s2,String option1,String option2)
 	{
-		super(scoreMatrixFile,s1,s2,option1,option2);
+		super(scoreMatrix,s1,s2,option1,option2);
 	}
 	
-	public int local() throws RuntimeException
+	public int local(int bandSize, int maxBand, int minBand) throws RuntimeException
 	{
 		int max = 0;
-		for(int i=1;i<s1.length()+1;i++)	
-			for(int j=1;j<s2.length()+1;j++)
-			{
-				intOutMatrix[i][j] = Math.max(0, Math.max(intOutMatrix[i-1][j]+scoreMatrix[letters.get(s1.charAt(i-1))][6], Math.max(intOutMatrix[i-1][j-1]+scoreMatrix[letters.get(s1.charAt(i-1))][letters.get(s2.charAt(j-1))], intOutMatrix[i][j-1]+scoreMatrix[6][letters.get(s2.charAt(j-1))])));
-				// updating our trace back
-				if(intOutMatrix[i][j]==intOutMatrix[i-1][j-1]+scoreMatrix[letters.get(s1.charAt(i-1))][letters.get(s2.charAt(j-1))])
-					traceBack[i][j] = DIAG;
-				else if(intOutMatrix[i][j]==intOutMatrix[i-1][j]+scoreMatrix[6][letters.get(s1.charAt(i-1))])
-					traceBack[i][j] = UP;
-				else if(intOutMatrix[i][j] == intOutMatrix[i][j-1]+scoreMatrix[letters.get(s2.charAt(j-1))][6])
-					traceBack[i][j] = LEFT;	
-				max = Math.max(max, intOutMatrix[i][j]);
-			}
+		
+		if(option1.equals("-l"))
+		{
+			for(int i=1;i<s1.length()+1;i++)
+				for(int j=1;j<s2.length()+1;j++)
+				{
+					intOutMatrix[i][j] = Math.max(0, Math.max(intOutMatrix[i-1][j]+scoreMatrix[letters.get(s1.charAt(i-1))][6], Math.max(intOutMatrix[i-1][j-1]+scoreMatrix[letters.get(s1.charAt(i-1))][letters.get(s2.charAt(j-1))], intOutMatrix[i][j-1]+scoreMatrix[6][letters.get(s2.charAt(j-1))])));
+					// updating our trace back
+					if(intOutMatrix[i][j]==intOutMatrix[i-1][j-1]+scoreMatrix[letters.get(s1.charAt(i-1))][letters.get(s2.charAt(j-1))])
+						traceBack[i][j] = DIAG;
+					else if(intOutMatrix[i][j]==intOutMatrix[i-1][j]+scoreMatrix[6][letters.get(s1.charAt(i-1))])
+						traceBack[i][j] = UP;
+					else if(intOutMatrix[i][j] == intOutMatrix[i][j-1]+scoreMatrix[letters.get(s2.charAt(j-1))][6])
+						traceBack[i][j] = LEFT;	
+					max = Math.max(max, intOutMatrix[i][j]);
+				}
+		}
+		
+		
+		else
+		{
+			for(int i=1;i<s1.length()+1;i++)
+				for(int j=Math.max(1, i+(minBand-2*bandSize));j<Math.min(s2.length()+1, maxBand+2*bandSize+i);j++)
+				{
+					intOutMatrix[i][j] = Math.max(0, Math.max(intOutMatrix[i-1][j]+scoreMatrix[letters.get(s1.charAt(i-1))][6], Math.max(intOutMatrix[i-1][j-1]+scoreMatrix[letters.get(s1.charAt(i-1))][letters.get(s2.charAt(j-1))], intOutMatrix[i][j-1]+scoreMatrix[6][letters.get(s2.charAt(j-1))])));
+					// updating our trace back
+					if(intOutMatrix[i][j]==intOutMatrix[i-1][j-1]+scoreMatrix[letters.get(s1.charAt(i-1))][letters.get(s2.charAt(j-1))])
+						traceBack[i][j] = DIAG;
+					else if(intOutMatrix[i][j]==intOutMatrix[i-1][j]+scoreMatrix[6][letters.get(s1.charAt(i-1))])
+						traceBack[i][j] = UP;
+					else if(intOutMatrix[i][j] == intOutMatrix[i][j-1]+scoreMatrix[letters.get(s2.charAt(j-1))][6])
+						traceBack[i][j] = LEFT;	
+					max = Math.max(max, intOutMatrix[i][j]);
+				}
+		}
+		
 		return max;
 	}
 	

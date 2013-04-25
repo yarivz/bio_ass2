@@ -1,29 +1,27 @@
 import java.io.*;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.Set;
+import java.util.*;
 
 public class FastaYariv {
 
     int dbLength;
     int queryLength;
     int ktup;
-    HashMap<String,HashMap<Integer,ArrayList<Integer>>> dictionary;
-    HashMap<Integer,ArrayList<Diagonal>> hotspots;
+    int maxDiags;
+    HashMap<String,HashMap<Integer,List<Integer>>> dictionary;
+    HashMap<Integer,HashMap<Integer,List<Diagonal>>> hotspots;
 
     String db;
     String query;
     String curStr;
     String curQuery;
-    Diagonal curDiag;
-    ArrayList<Diagonal> tempDiags;
-    ArrayList<Integer> curList,values;
-    HashMap<Integer,ArrayList<Integer>> curMap;
-
+    Diagonal curDiag,nextDiag;
+    List<Diagonal> tempDiagList,tempDiagListTotal;
+    List<Integer> curList,values;
+    HashMap<Integer,List<Integer>> curMap;
+    HashMap<Integer,List<Diagonal>> tempDiagMap;
 
     public void buildDict(String dbFile){
-        dictionary = new HashMap<String,HashMap<Integer,ArrayList<Integer>>>();
+        dictionary = new HashMap<String,HashMap<Integer,List<Integer>>>();
 
         try{
             // Open the file that is the first
@@ -52,7 +50,7 @@ public class FastaYariv {
                             else{
                                 curList = new ArrayList<Integer>();
                                 curList.add(j);
-                                curMap = new HashMap<Integer,ArrayList<Integer>>();
+                                curMap = new HashMap<Integer,List<Integer>>();
                                 curMap.put(dbNum,curList);
                                 dictionary.put(curStr,curMap);
                             }
@@ -77,24 +75,34 @@ public class FastaYariv {
 
     public void checkQuery(String q){
         queryLength = q.length();
-        hotspots = new HashMap<Integer,ArrayList<Diagonal>>();
+        hotspots = new HashMap<Integer,HashMap<Integer,List<Diagonal>>>();    //The first key is the DB str No., the second key is the i-j values
         for(int i=0;i<queryLength-ktup+1;i++){    //i is the current index in the Query string
             curQuery = q.substring(i,i+ktup);     //get the current sliding window view of the query
-            curMap =  dictionary.get(curQuery);
+            curMap =  dictionary.get(curQuery);   //get the current HashMap containing all the DB matches to curQuery (ktup substring of query)
             if(curMap != null){
                 Set<Integer> keys = curMap.keySet();
                 if(keys != null && !keys.isEmpty()){
-                    for(Integer k:keys)    //k is the current db String number
+                    for(Integer k:keys)    //iterate over DB Strings, k is the current db String number
                     {
                         if((values = curMap.get(k))!=null)
                         {
-                            tempDiags = new ArrayList<Diagonal>();
+                            if((tempDiagMap = hotspots.get(k)) == null)
+                                tempDiagMap = new HashMap<Integer,List<Diagonal>>();  //this will hold all the diagonals for db string k and the query
                             for(Integer j:values)           //j is the current index in the db String for the match to curQuery
                             {
                                 curDiag = new Diagonal(i,j,ktup,ktup);
-                                tempDiags.add(curDiag);
+                                if(tempDiagMap.containsKey(i-j))
+                                {
+                                    tempDiagMap.get(i-j).add(curDiag);
+                                }
+                                else
+                                {
+                                    tempDiagList = new ArrayList<Diagonal>();
+                                    tempDiagList.add(curDiag);
+                                    tempDiagMap.put(i-j,tempDiagList);
+                                }
                             }
-                            hotspots.put(k,tempDiags);
+                            hotspots.put(k,tempDiagMap);
                         }
                     }
                 }
@@ -102,21 +110,60 @@ public class FastaYariv {
         }
     }
 
-    public HashMap<Integer,ArrayList<Diagonal>> buildDiagonals(){
-        HashMap<Integer,ArrayList<Diagonal>> diags = new HashMap<Integer,ArrayList<Diagonal>>();
-        ArrayList<Diagonal> diagList;
-        HashMap<Integer,ArrayList<Diagonal>> diagMap;
-        for(int i=0;i<hotspots.size();i++){    //i is the current db String number
-            tempDiags = hotspots.get(i);       //tempdiags is the list of hotspots found for the current db str and query
-            diagMap = new  HashMap<Integer,ArrayList<Diagonal>>();  //diagMap holds the current Diagonals for this query and db str
-            for(Diagonal d:tempDiags){        //sort Diagonals according to their i-j ratios - group same diagonal runs together
-                int key = d.i-d.j;
-                if(diagMap.containsKey(key))    //if there are other hotspots in the same diagonal, try to connect neighbouring hotspots
+    public HashMap<Integer,List<Diagonal>> buildDiagonals(){
+        HashMap<Integer,List<Diagonal>> diags = new HashMap<Integer,List<Diagonal>>();
+        for(Integer k:hotspots.keySet()){    //k is the current db String number
+            tempDiagMap = hotspots.get(k);       //tempdiagmap is the Map of Diagonals found for the current db str and query
+            tempDiagListTotal = new ArrayList<Diagonal>();
+            for(Map.Entry entry:tempDiagMap.entrySet())   //iterate over each list of Diagonals that are all on the same ratio
+            {
+                tempDiagList = (ArrayList<Diagonal>)entry.getValue();     //get the current list of Diagonals
+                ListIterator<Diagonal> litr = tempDiagList.listIterator();
+                while(litr.hasNext())       //get the current diagonal
                 {
-                    diagList =  diagMap.get(key);
-                    for(Diagonal g:diagList)                    //iterate over the current Diagonals already found
+                    curDiag = litr.next();
+                    while(litr.hasNext())
                     {
-                        Diagonal upper = (d.j < g.j ? d : g);    //get the diagonal which is the upper-left of the two
+                        nextDiag = litr.next();     //get the next diagonal
+                        int distance = nextDiag.i-curDiag.i;
+                        if(curDiag.length > distance)   //Diagonals are overlapping
+                        {
+                            curDiag.length = distance+nextDiag.length;          //combine the diagonals
+                            curDiag.score = curDiag.length*2;
+                            litr.remove();
+                        }
+                        else if(distance > curDiag.length && (distance - curDiag.length) < nextDiag.length)   //distance between Diagonals is smaller than the length of the lower
+                        {
+                            curDiag.score = (curDiag.length - (distance-curDiag.length)+nextDiag.length)*2;      //combine the diagonals and account for mismatches
+                            curDiag.length = distance+curDiag.length;
+                            litr.remove();
+                        }
+                        else
+                        {
+                            curDiag = litr.previous();    //go back with the iterator so in the next iteration of outer loop it will point to the correct diagonal
+                            break;
+                        }
+                    }
+                }
+                tempDiagListTotal.addAll(tempDiagList);
+            }
+            Collections.sort(tempDiagListTotal,new DiagComparator());
+            tempDiagListTotal.subList(0,tempDiagListTotal.size()-maxDiags).clear();
+            diags.put(k,tempDiagListTotal);
+        }
+    return diags;
+    }
+
+
+
+}
+
+
+
+
+
+
+                       /* Diagonal upper = (d.j < g.j ? d : g);    //get the diagonal which is the upper-left of the two
                         Diagonal lower = (upper == d ? g : d);   //get the diagonal which is the lower-right of the two
                         int distance = lower.j-upper.j;      //get the distance between their indexes
                         if(distance<=upper.length)    //Diagonals are overlapping
@@ -137,22 +184,11 @@ public class FastaYariv {
                             diagList.add(upper);
                             break;
                         }
+                       // diagList.add(d);
                     }
-                   // diagList.add(d);
-                }
-                else
-                {
-                    diagList = new ArrayList<Diagonal>();
-                    diagList.add(d);
-                    diagMap.put(key,diagList);
-                }
-            }
-
-
-
-        }
-
-    return diags;
-    }
-
-}
+                    else
+                    {
+                        diagList = new ArrayList<Diagonal>();
+                        diagList.add(d);
+                        diagMap.put(key,diagList);
+                    }   */

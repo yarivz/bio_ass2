@@ -1,7 +1,3 @@
-import java.io.BufferedReader;
-import java.io.DataInputStream;
-import java.io.FileInputStream;
-import java.io.InputStreamReader;
 import java.util.Hashtable;
 
 
@@ -10,7 +6,6 @@ public class Alignment{
 	final byte DIAG = 1;
 	final byte UP = 2;
 	final byte LEFT = 3;
-	
 	String s1,s2,option1,option2;
 	Hashtable<Character,Integer> letters;
 	int [][] scoreMatrix,intOutMatrix,gapSize,E,F;
@@ -20,7 +15,7 @@ public class Alignment{
     double[] eValue,fValue,gValue,gaps; //Variables for global alignment with gaps
     
 
-    public Alignment(String scoreMatrixFile,String s1,String s2,String option1, String option2)
+    public Alignment(int[][] scoreMatrix,String s1,String s2,String option1, String option2)
 	{
 		this.s1 = s1.toUpperCase();			// making sure the sequences are consisted of capital letters
 		this.s2 = s2.toUpperCase();
@@ -32,7 +27,7 @@ public class Alignment{
 		letters.put('U',4);
 		letters.put('N',5);
 		letters.put('*',6);
-		scoreMatrix = new int [7][7];
+		this.scoreMatrix = scoreMatrix;
 		this.option1 = option1;
         this.option2 = option2;
 
@@ -54,47 +49,7 @@ public class Alignment{
         traceBack = new byte[s1.length()+1][s2.length()+1];
 		
 		
-		try{
-			  // Open the file that is the first 
-			  // command line parameter
-			  FileInputStream fstream = new FileInputStream(scoreMatrixFile);
-			  // Get the object of DataInputStream
-			  DataInputStream in = new DataInputStream(fstream);
-			  BufferedReader br = new BufferedReader(new InputStreamReader(in));
-			  String strLine;
-			  //Read File Line By Line
-			  int lineIndex = 1;
-			  String[] split;
-			  while ((strLine = br.readLine()) != null && lineIndex<16) 
-			  {
-				if(lineIndex<9)			// for the unused lines in the beginning of the score matrix file
-				{
-					lineIndex++;
-					continue;
-				}
-				else
-				{
-					split = strLine.split(" +");
-					for(int i=1;i<split.length;i++)
-					{
-						scoreMatrix[lineIndex-9][i-1] = Integer.parseInt(split[i]);
-					}
-					lineIndex++;
-				}
-			  }
-			  if(option2.equals("-a"))		// parsing the affine function coefficients
-				{
-					strLine = br.readLine();
-					strLine = br.readLine();
-					a = Integer.parseInt(strLine.substring(2));
-					strLine = br.readLine();
-					b = Integer.parseInt(strLine.substring(2));
-				}
-			  //Close the input stream
-			  in.close();
-			    }catch (Exception e){//Catch exception if any
-			  System.err.println("Error: " + e.getMessage());
-			  }
+
 	}
 	
 	public double[] G(int i, int j) throws RuntimeException{		// calculating match/mismatch value

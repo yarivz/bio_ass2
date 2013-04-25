@@ -1,0 +1,5 @@
+diagonalThreshold = 10
+chainingThreshold = 30
+ktup = 6
+maxDiags = 10
+bandSize = 50
